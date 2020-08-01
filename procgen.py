@@ -40,12 +40,18 @@ class RectangularRoom:
             and self.y2 >= other.y1
         )
 
+    def get_random_point(self):
+        x = random.randint(self.x1 + 1, self.x2 - 1)
+        y = random.randint(self.y1 + 1, self.y2 - 1)
+        return x, y
+
 
 def place_entities(
     room: RectangularRoom,
-    dungeon: GameMap, maximum_monsters: int,
+    dungeon: GameMap, maximum_monsters: int, maximum_items: int
 ) -> None:
     number_of_monsters = random.randint(0, maximum_monsters)
+    number_of_items = random.randint(0, maximum_items)
 
     for i in range(number_of_monsters):
         x = random.randint(room.x1 + 1, room.x2 - 1)
@@ -56,6 +62,14 @@ def place_entities(
                 entity_factories.orc.spawn(dungeon, x, y)
             else:
                 entity_factories.troll.spawn(dungeon, x, y)
+
+    for i in range(number_of_items):
+        x, y = room.get_random_point()
+
+        if not any(entity.overlaps(x, y) for entity in dungeon.entities):
+            entity_factories.health_potion.spawn(dungeon, x ,y)
+
+
 
 def tunnel_between(
     start: Tuple[int, int], end: Tuple[int, int]
@@ -84,6 +98,7 @@ def generate_dungeon(
     map_width: int,
     map_height: int,
     max_monsters_per_room: int,
+    max_items_per_room: int,
     engine: Engine,
 ) -> GameMap:
     """ generate a new dungeon map """
@@ -117,7 +132,7 @@ def generate_dungeon(
             for x, y in tunnel_between(rooms[-1].center, new_room.center):
                 dungeon.tiles[x, y] = tile_types.floor
 
-        place_entities(new_room, dungeon, max_monsters_per_room)
+        place_entities(new_room, dungeon, max_monsters_per_room, max_items_per_room)
 
         # add new room to list
         rooms.append(new_room)
