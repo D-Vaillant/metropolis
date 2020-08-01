@@ -2,6 +2,7 @@ from typing import Set, Iterable, Any
 
 from tcod.context import Context
 from tcod.console import Console
+from tcod.map import compute_fov
 
 from actions import EscapeAction, MovementAction
 from entity import Entity
@@ -27,12 +28,25 @@ class Engine:
 
             action.perform(self, self.player)  # passes iself in
 
+            self.update_fov()
+
+    def update_fov(self) -> None:
+        """ Recompute visible area based on player's point of view. """
+        self.game_map.visible[:] = compute_fov(
+            transparency=self.game_map.tiles["transparent"],
+            pov=(self.player.x, self.player.y),
+            radius=8,
+        )
+        # If a tile is visible, it should be marked as explored.
+        self.game_map.explored |= self.game_map.visible
+
     def render(self, console: Console,
                context: Context) -> None:
         self.game_map.render(console)
 
         for entity in self.entities:
-            console.print(entity.x, entity.y, entity.char, fg=entity.color)
+            if self.game_map.visible[entity.x, entity.y]:
+                console.print(entity.x, entity.y, entity.char, fg=entity.color)
 
         context.present(console)
         console.clear()
