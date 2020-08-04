@@ -1,14 +1,16 @@
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import Callable, Optional, TYPE_CHECKING, Union
 
 import random
 
 import actions
 import color
+import components.ai
 import components.inventory
 from components.base_component import BaseComponent
 from exceptions import Impossible
+from input_handlers import SingleRangedAttackHandler
 
 if TYPE_CHECKING:
     from entity import Actor, Item
@@ -38,15 +40,55 @@ class Consumable(BaseComponent):
 
 
 
-class HealingConsumable(Consumable):
-    def __init__(self, amount: int, max_amount: Optional[int] = None):
-        self.amount = amount
-        if max_amount is None:
-            self.max_amount = self.amount
+class ConfusionConsumable(Consumable):
+    def __init__(self, number_of_turns: Union[int, Callable]):
+        if not isinstance(number_of_turns, int):
+            number_of_turns = number_of_turns()
+        self.number_of_turns = number_of_turns
+
+    def get_action(self, consumer: Actor) -> Optional[actions.Action]:
+        self.engine.message_log.add_message(
+            "Select a target location.", color.needs_target
+        )
+        self.engine.event_handler = SingleRangedAttackHandler(
+            self.engine,
+            callback=lambda xy: actions.ItemAction(consumer, self.parent, xy),
+        )
+        return None
 
     def activate(self, action: actions.ItemAction) -> None:
         consumer = action.entity
-        healed_amount = random.randint(self.amount, self.max_amount)
+        target = action.target_actor
+
+        if not self.engine.game_map.visible[action.target_xy]:
+            raise Impossible("You can't see what's over there.")
+        if not target:
+            raise Impossible("You're not targeting anything.")
+        if target is consumer:
+            raise Impossible("You can't target yourself.")
+
+        self.engine.message_log.add_message(
+            f"{target.name} begins to stumble around, its eyes glassy.",
+            color.status_effect_applied,
+        )
+        target.ai = components.ai.ConfusedEnemy(
+            entity=target, previous_ai=target.ai, turns_remaining=self.number_of_turns,
+        )
+        self.consume()
+
+
+
+class HealingConsumable(Consumable):
+    def __init__(self,
+                 amount: Union[int, Callable],
+                 ):
+        if not isinstance(amount, int):
+            amount = amount()
+        self.amount = amount
+
+    def activate(self, action: actions.ItemAction) -> None:
+        consumer = action.entity
+        healed_amount = self.amount
 
         if healed_amount == 0:
             self.engine.message_log.add_message(
@@ -63,3 +105,36 @@ class HealingConsumable(Consumable):
             self.consume()
         else:
             raise Impossible(f"Your health is already full.")
+
+
+class LightningDamageConsumable(Consumable):
+    def __init__(self,
+                 damage: Union[int, Callable],
+                 maximum_range: int):
+        if not isinstance(damage, int):
+            damage = damage()
+        self.damage = damage
+        self.maximum_range = maximum_range
+
+    def activate(self, action: actions.ItemAction) -> None:
+        consumer = action.entity
+        target = None
+        closest_distance = self.maximum_range + 1.0
+
+        for actor in self.engine.game_map.actors:
+            # If the actor isn't us, and is visible.
+            if actor is not consumer and self.parent.gamemap.visible[actor.x, actor.y]:
+                distance = consumer.distance(actor.x, actor.y)
+
+                if distance < closest_distance:
+                    target = actor
+                    closest_distance = distance
+
+        if target:
+            self.engine.message_log.add_message(
+                f"A crackle of electricity strikes {target.name} for {self.damage} HP.",
+            )
+            target.fighter.take_damage(self.damage)
+            self.consume()
+        else:
+            raise Impossible("No enemy is near.")

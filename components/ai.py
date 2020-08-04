@@ -1,11 +1,18 @@
 from __future__ import annotations
 
-from typing import List, Tuple, TYPE_CHECKING
+import random
+from typing import List, Optional, Tuple, TYPE_CHECKING
 
 import numpy as np  # type: ignore
 import tcod
 
-from actions import Action, MeleeAction, MovementAction, WaitAction
+from actions import (
+    Action,
+    BumpAction,
+    MeleeAction,
+    MovementAction,
+    WaitAction
+)
 
 if TYPE_CHECKING:
     from entity import Actor
@@ -43,6 +50,57 @@ class BaseAI(Action):
         # Convert from List[List[int]] to List[Tuple[int, int]]
         return [(index[0], index[1]) for index in path]
 
+
+class ConfusedEnemy(BaseAI):
+    """
+    A confused enemy stumbles around aimlessly, swinging at anything
+    in its way.
+
+    Has a chance to avoid hitting allies.
+    """
+    def __init__(self,
+         entity: Actor,
+         previous_ai: Optional[BaseAI],
+         turns_remaining: int,
+    ):
+        super().__init__(entity)
+
+        self.previous_ai = previous_ai
+        self.turns_remaining = turns_remaining
+        
+    def perform(self) -> None:
+        # Revert AI back to original state once effect expires.
+        if self.turns_remaining <= 0:
+            self.engine.message_log.add_message(
+                f"The {self.entity.name} is no longer confused."
+            )
+            self.entity.ai = self.previous_ai
+        else:
+            self.turns_remaining -= 1
+            # pick a random direction
+            direction_x, direction_y = random.choice(
+                [
+                    (-1, -1),  # NW
+                    (0, -1),   # N
+                    (1, -1),   # NE
+                    (-1, 0),   # W
+                    (1, 0),    # E
+                    (-1, 1),   # SW
+                    (0, 1),    # S
+                    (1, 1),    # SE
+                ]
+            )
+            # Chance to not hit allies.
+            target_x = self.entity.x + direction_x,
+            target_y = self.entity.y + direction_y
+            target_entity = self.engine.game_map.get_blocking_entity_at_location(target_x, target_y)
+            if not (target_entity is self.engine.player):
+                # 50% chance of not hitting allies
+                # TODO: Tie into allegiances, intelligence.
+                r = random.random()
+                if r <= 0.5:
+                    return WaitAction(self.entity)
+            return BumpAction(self.entity, direction_x, direction_y,).perform()
 
 class HostileEnemy(BaseAI):
     def __init__(self, entity: Actor):

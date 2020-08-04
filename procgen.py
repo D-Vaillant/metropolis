@@ -67,7 +67,13 @@ def place_entities(
         x, y = room.get_random_point()
 
         if not any(entity.overlaps(x, y) for entity in dungeon.entities):
-            entity_factories.health_potion.spawn(dungeon, x ,y)
+            item_chance = random.random()
+            if item_chance < 0.6:
+                entity_factories.health_potion.spawn(dungeon, x, y)
+            elif item_chance < 0.9:
+                entity_factories.confusion_scroll.spawn(dungeon, x, y)
+            else:
+                entity_factories.lightning_scroll.spawn(dungeon, x, y)
 
 
 

@@ -13,12 +13,12 @@ if TYPE_CHECKING:
 class Action:
     def __init__(self, entity: Actor) -> None:
         super().__init__()
-        self.entity = entity
+        self.entity = entity  # actions are attached to Agents
 
     @property
     def engine(self) -> Engine:
         """ Return the engine that this action belongs to. """
-        return self.entity.gamemap.engine
+        return self.entity.gamemap.engine   # Entities (and so Agents) are attached to Engine
 
     def perform(self) -> None:
         """ Perform this action with the objects required.
@@ -40,6 +40,8 @@ class WaitAction(Action):
 
 class ActionWithDirection(Action):
     def __init__(self, entity: Actor, dx: int, dy: int):
+        """ An action that's also instantiated with a coordinate pair.
+        It corresponds to offset from the Actor doing the Action. """
         super().__init__(entity)
 
         self.dx = dx
@@ -47,12 +49,14 @@ class ActionWithDirection(Action):
 
     @property
     def dest_xy(self) -> Tuple[int, int]:
-        """Returns this action's destination."""
+        """ Returns this action's destination. 
+        Here's where we do something with that offset. """
         return self.entity.x + self.dx, self.entity.y + self.dy
 
     @property
     def blocking_entity(self) -> Optional[Entity]:
-        """Return blocking entity at this action's destination."""
+        """ Return blocking entity at this action's destination.
+        We're asking the game map about blocking. """
         return self.engine.game_map.get_blocking_entity_at_location(*self.dest_xy)
 
     @property
@@ -143,9 +147,9 @@ class PickupAction(Action):
 class ItemAction(Action):
     def __init__(
         self,
-        entity: Actor,
-        item: Item,
-        target_xy: Optional[Tuple[int, int]] = None
+        entity: Actor,  # Actions belong to some Actor.
+        item: Item,  # And they reference their item.
+        target_xy: Optional[Tuple[int, int]] = None   # We can specify coordinates.
     ):
         super().__init__(entity)
         self.item = item
