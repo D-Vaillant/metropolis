@@ -140,7 +140,9 @@ class PickupAction(Action):
                 self.engine.message_log.add_message(f"You picked up the {item.name}.")
                 return
 
-        raise exceptions.Impossible("There is nothing here to pick up.")
+        self.engine.turn_queue.schedule(value=self.entity, interval=0)
+        self.engine.message_log.add_message("There is nothing here to pick up.")
+        return
 
 
 
