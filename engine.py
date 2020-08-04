@@ -10,6 +10,7 @@ import exceptions
 from input_handlers import MainGameEventHandler
 from message_log import MessageLog
 from render_functions import render_bar, render_names_at_mouse_location
+from tqueue import TurnQueue
 
 if TYPE_CHECKING:
     from entity import Actor
@@ -25,13 +26,20 @@ class Engine:
         self.message_log = MessageLog()
         self.mouse_location = (0, 0)
         self.player = player
+        self.turn_queue = TurnQueue()
 
     def handle_enemy_turns(self) -> None:
-        for entity in set(self.game_map.actors) - {self.player}:
-            try:
-                entity.ai.perform()
-            except exceptions.Impossible:
-                pass  # ignore impossible AI actions
+        while True:
+            ticket = self.turn_queue.next()
+
+            entity_to_act = ticket.value
+            if entity_to_act is self.player:
+                return
+
+        # I took out the Impossible exception part...
+        if entity_to_act.ai:
+            entity_to_act.ai.perform()
+
 
     def update_fov(self) -> None:
         """ Recompute visible area based on player's point of view. """

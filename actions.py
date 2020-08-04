@@ -20,6 +20,11 @@ class Action:
         """ Return the engine that this action belongs to. """
         return self.entity.gamemap.engine   # Entities (and so Agents) are attached to Engine
 
+    def schedule(self, interval: int, value: Any) -> Ticket:
+        """ Harmless wrapper function. """
+        return self.engine.turn_queue.schedule(interval=interval, value=value)
+
+
     def perform(self) -> None:
         """ Perform this action with the objects required.
 
