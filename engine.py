@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import List, Optional, TYPE_CHECKING
 
 from tcod.console import Console
 from tcod.map import compute_fov
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from input_handlers import EventHandler
 
 class Engine:
-    game_map: GameMap
+    game_maps: List[GameMap]
 
     def __init__(self,
                  player: Actor):
@@ -25,6 +25,7 @@ class Engine:
         self.message_log = MessageLog()
         self.mouse_location = (0, 0)
         self.player = player
+        self.map_index = 0
 
     def handle_enemy_turns(self) -> None:
         for entity in set(self.game_map.actors) - {self.player}:
@@ -32,6 +33,23 @@ class Engine:
                 entity.ai.perform()
             except exceptions.Impossible:
                 pass  # ignore impossible AI actions
+
+    @property
+    def game_map(self) -> Optional[GameMap]:
+        """ Maps are accessed by using an index. """
+        try:
+            return self.game_maps[self.map_index]
+        except IndexError:
+            return None
+
+    @game_map.setter
+    def game_map(self, new_map) -> None:
+        """ Either we switch to an already existing map, or we add it to the list. """
+        map_index = self.game_maps.index(new_map)
+        if map_index == -1:
+            self.game_maps.append(new_map)
+            map_index = len(self.game_maps) - 1
+        self.map_index = map_index
 
     def update_fov(self) -> None:
         """ Recompute visible area based on player's point of view. """

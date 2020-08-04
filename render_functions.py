@@ -10,7 +10,6 @@ if TYPE_CHECKING:
     from game_map import GameMap
 
 
-
 def get_names_at_location(x: int, y: int, game_map: GameMap) -> str:
     """ returns the names of any entities at a location
     edit me to return any information you want """
@@ -49,5 +48,4 @@ def render_names_at_mouse_location(
     names_at_mouse_location = get_names_at_location(
         x=mouse_x, y=mouse_y, game_map=engine.game_map
     )
-
     console.print(x=x, y=y, string=names_at_mouse_location)

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import copy
 import traceback
+from typing import TYPE_CHECKING
 
 import tcod
 
@@ -8,6 +9,10 @@ import color
 from engine import Engine
 import entity_factories
 from procgen import generate_dungeon
+
+if TYPE_CHECKING:
+    from game_map import GameMap
+
 
 def main() -> None:
     screen_width = 80
@@ -32,7 +37,7 @@ def main() -> None:
 
     engine = Engine(player=player)
 
-    engine.game_map = generate_dungeon(
+    starting_map = generate_dungeon(
         max_rooms=max_rooms,
         room_min_size=room_min_size,
         room_max_size=room_max_size,
@@ -42,6 +47,8 @@ def main() -> None:
         max_items_per_room=max_items_per_room,
         engine=engine,
     )
+    engine.game_map: GameMap = starting_map
+
     engine.update_fov()
 
     engine.message_log.add_message(
@@ -69,6 +76,7 @@ def main() -> None:
                 traceback.print_exc()
                 # print error to the message log
                 engine.message_log.add_message(traceback.format_exc(), color.error)
+
 
 if __name__ == "__main__":
     main()
