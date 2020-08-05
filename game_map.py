@@ -20,10 +20,15 @@ class GameMap:
         self.entities = set(entities)
         self.tiles = np.full((width, height), fill_value=tile_types.wall, order="F")
 
-        self.visible = np.full(
+        # Map layers.
+        # We could "register" layers onto a dict.
+        ## Ideally, dynamically deleting/updating them?
+        self.layers = dict()
+
+        self.layers["visible"] = np.full(
             (width, height), fill_value=False, order="F"
         )  # tiles the player can see
-        self.explored = np.full(
+        self.layers["explored"] = np.full(
             (width, height), fill_value=False, order="F"
         )  # tiles the player has seen
 
@@ -45,6 +50,30 @@ class GameMap:
             entity for entity in self.entities
             if isinstance(entity, Item)
         )
+
+    @property
+    def explored(self):
+        return self.layers["explored"]
+
+    @explored.setter
+    def explored(self, map):
+        self.layers["explored"] = map
+
+    @explored.deleter
+    def explored(self, map):
+        del(self.layers["explored"])
+
+    @property
+    def visible(self):
+        return self.layers["visible"]
+
+    @visible.setter
+    def visible(self, map):
+        self.layers["visible"] = map
+
+    @visible.deleter
+    def visible(self, map):
+        del(self.layers["visible"])
 
     def get_blocking_entity_at_location(
         self, location_x: int, location_y: int,

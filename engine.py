@@ -26,6 +26,7 @@ class Engine:
         self.mouse_location = (0, 0)
         self.player = player
         self.map_index = 0
+        self.game_maps = []
 
     def handle_enemy_turns(self) -> None:
         for entity in set(self.game_map.actors) - {self.player}:
@@ -45,11 +46,11 @@ class Engine:
     @game_map.setter
     def game_map(self, new_map) -> None:
         """ Either we switch to an already existing map, or we add it to the list. """
-        map_index = self.game_maps.index(new_map)
-        if map_index == -1:
+        try:
+            self.map_index = self.game_maps.index(new_map)
+        except ValueError:
             self.game_maps.append(new_map)
-            map_index = len(self.game_maps) - 1
-        self.map_index = map_index
+            self.map_index = len(self.game_maps) - 1
 
     def update_fov(self) -> None:
         """ Recompute visible area based on player's point of view. """

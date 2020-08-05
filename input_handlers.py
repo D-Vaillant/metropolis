@@ -79,7 +79,7 @@ class EventHandler(tcod.event.EventDispatch[Action]):
     def handle_action(self, action: Optional[Action]) -> bool:
         """ Handle actions required from event methods.
 
-        Returns True if the action will advance a turn.
+        Returns True if the action was scheduled. 
         """
         if action is None:
             return False
