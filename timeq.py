@@ -2,6 +2,12 @@
 import heapq
 from typing import Any, List, NamedTuple, Iterable, Iterator
 
+""" Ticks: 1 tick = .1 seconds """
+""" Some principles:
+All actions have variable tick costs, depending on skill in that.
+
+Movement: 5 ft spaces.
+"""
 
 class Ticket(NamedTuple):
     time: int
