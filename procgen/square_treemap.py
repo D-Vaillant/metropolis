@@ -42,11 +42,14 @@ if __name__ == "__main__":
     R = Rectangle(width=30, height=10)
     assert sum(room_areas) == R.width*R.height
 
-    f = squarify.padded_squarify(room_areas, 0, 0, R.width, R.height)
+    f = squarify.squarify(room_areas, 0, 0, R.width, R.height)
 
     for rectangle in f:
         for k, v in rectangle.items():
-            rectangle[k] = round(v)
+            if k in ['x', 'y']:
+                rectangle[k] = int(v)+1
+            else:
+                rectangle[k] = int(v)-1
 
     for r in f:
         R.arr[(slice(r['x'], r['x']+r['dx']), slice(r['y'], r['y']+r['dy']))] = "."
