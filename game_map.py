@@ -23,12 +23,12 @@ class GameMap:
         # Map layers.
         # We could "register" layers onto a dict.
         ## Ideally, dynamically deleting/updating them?
-        self.layers = dict()
+        self._layers = dict()
 
-        self.layers["visible"] = np.full(
+        self._layers["visible"] = np.full(
             (width, height), fill_value=False, order="F"
         )  # tiles the player can see
-        self.layers["explored"] = np.full(
+        self._layers["explored"] = np.full(
             (width, height), fill_value=False, order="F"
         )  # tiles the player has seen
 
@@ -53,27 +53,39 @@ class GameMap:
 
     @property
     def explored(self):
-        return self.layers["explored"]
+        return self._layers["explored"]
 
     @explored.setter
     def explored(self, map):
-        self.layers["explored"] = map
+        self._layers["explored"] = map
 
     @explored.deleter
     def explored(self, map):
-        del(self.layers["explored"])
+        del(self._layers["explored"])
 
     @property
     def visible(self):
-        return self.layers["visible"]
+        return self._layers["visible"]
 
     @visible.setter
     def visible(self, map):
-        self.layers["visible"] = map
+        self._layers["visible"] = map
 
     @visible.deleter
     def visible(self, map):
-        del(self.layers["visible"])
+        del(self._layers["visible"])
+
+    def get_layer(self, layer_name: str) -> np.ndarray:
+        try:
+            return self._layers[layer_name]
+        except KeyError as K:
+            # Create an empty layer, maybe?
+            raise K
+
+    def set_layer(self, layer_name: str, layer_contents: np.ndarray) -> None:
+        # Check to see if the layer actually... fits.
+        assert layer_contents.shape == self.tiles.shape
+        self._layers[layer_name] = layer_contents
 
     def get_blocking_entity_at_location(
         self, location_x: int, location_y: int,

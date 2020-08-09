@@ -17,7 +17,7 @@ class RectangularRoom:
         self.x1 = x
         self.y1 = y
         self.x2 = x + width
-        self.y2 = y + width
+        self.y2 = y + height
 
     @property
     def center(self) -> Tuple[int, int]:
