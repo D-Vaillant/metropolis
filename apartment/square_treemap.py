@@ -1,6 +1,7 @@
 """ testing grounds for using squarify """
-from typing import Iterator, Tuple
+from typing import Iterator, Tuple, Optional
 import math
+import random
 import numpy as np
 import squarify
 import itertools
@@ -39,10 +40,87 @@ class RectangularRoom:
             and self.y2 >= other.y1
         )
 
+    def adjacent(self, other) -> bool:
+        """ Returns true if the rooms have a wall in common.
+        Returns false if they're intersecting. That's illegal. """
+        return self.adjacency_wall(other) is not None
+
+    def adjacency_wall(self, other) -> Optional[Tuple[slice, slice]]:
+        """ Returns all of the shared wall tiles.
+        Doesn't play well with intersection. """
+        # Maybe
+        if self.x1 == other.x2:  # other is to the right
+            return (slice(self.x1, other.x2+1),
+                    slice(max(self.y1, other.y1)+1, min(self.y2, other.y2)))
+
+        elif self.x2 == other.x1:  # other is to the left
+            return (slice(self.x2, other.x1+1),
+                    slice(max(self.y1, other.y1)+1, min(self.y2, other.y2)))
+
+        elif self.y1 == other.y2:   # other is above
+            return (slice(max(self.x1, other.x1)+1, min(self.x2, other.x2)),
+                    slice(self.y1, other.y2+1))
+
+        elif self.y2 == other.y1:   # other is below
+            return (slice(max(self.x1, other.x1)+1, min(self.x2, other.x2)),
+                    slice(self.y2, other.y1+1))
+        return None
+
     def get_random_point(self):
         x = random.randint(self.x1 + 1, self.x2 - 1)
         y = random.randint(self.y1 + 1, self.y2 - 1)
         return x, y
+
+    def __repr__(self):
+        return f"<{self.__class__.__name__} : x=({self.x1}, {self.x2}) y=({self.y1}, {self.y2})>"
+
+
+def add_connection(
+    start: Tuple[int, int], end: Tuple[int, int]
+) -> Iterator[Tuple[int, int]]:
+    """ Add a door. """
+    x1, y1 = start
+    x2, y2 = end
+    if random.random() < 0.5:
+        # move horizontally, then vertically
+        corner_x, corner_y = x2, y1
+    else:
+        # move vertically, then horizontally
+        corner_x, corner_y = x1, y2
+
+    # Get coordinates.
+    for x, y in tcod.los.bresenham((x1, y1), (corner_x, corner_y)).tolist():
+        yield x, y
+    for x, y in tcod.los.bresenham((corner_x, corner_y), (x2, y2)).tolist():
+        yield x, y
+
+
+def find_slice_midpoint(s: slice,) -> int:
+    """ if it's not even, just random it up """
+    return s.start + int((s.stop - s.start)/2) + random.choice([-1,0])
+
+
+def find_door(
+    start: RectangularRoom,
+    end: RectangularRoom,
+) -> Optional[Tuple[int, int]]:
+    """ Get the midpoint of the adjacency wall. """
+    wall = start.adjacency_wall(end)
+    if wall is None:
+        return None
+    # check horizontally
+    # TODO: Make this division random.
+    #midpoint = lambda sliced: sliced.start + int(sliced.stop - sliced.start) + random.choice([0, 1])
+    if wall[0].start == wall[0].stop - 1:
+        x = wall[0].start
+        y = find_slice_midpoint(wall[1])
+        # horizontal
+        # care about vertical
+        # find y
+    else:  # it's vertical
+        y = wall[1].start
+        x = find_slice_midpoint(wall[0])
+    return (x, y)
 
 
 def print_floor(arr):
@@ -95,12 +173,6 @@ def carve_dungeon(dungeon,
 
 
 
-#if R.width > R.height:
-    # horizontal split
-#    pass
-#else:
-    # vertical split
-#    pass
 # How to account for wall thickness? 
 if __name__ == "__main__":
     room_x = 2
@@ -108,7 +180,7 @@ if __name__ == "__main__":
 
     width = 14
     height = 10
-    room_areas = [50,25,25,40]
+    room_areas = [50,25,20,45]
 
     wall_char = '#'
     floor_char = '.'
@@ -122,41 +194,12 @@ if __name__ == "__main__":
                             room_areas=room_areas,
                             wall_char='#',
                             floor_char='.')
-    for room in rooms:
+    for index, room in enumerate(rooms):
         dungeon[room.inner] = floor_char
+        if index > 0:
+            door_loc = find_door(rooms[index-1], room)
+            if door_loc is not None:
+                dungeon[door_loc] = 'D'
 
-    #for side in perimeter(dungeon):
-    #    dungeon[side] = wall_char
+
     print_floor(dungeon)
-
-#     R = np.full((width, height), wall_char, order='F')
-#     assert sum(room_areas) == width*height
-
-#     f = squarify.squarify(room_areas, 0, 0, width, height)
-#     # f is an array of "descriptions" of squares we made
-#     # they don't account for the flattening to integers particularly well
-#     for rectangle in f:
-#         for k, v in rectangle.items():
-#             if k in ['x', 'y']:
-#                 rectangle[k] = int(v)
-#             else:
-#                 rectangle[k] = int(v)
-
-#     rooms = [RectangularRoom(x = room_x + r['x'],
-#                              y = room_y + r['y'],
-#                              width=r['dx'],
-#                              height=r['dy']) for r in f]
-
-#     for r in f:
-#          R[(slice(r['x'], r['x']+r['dx']), slice(r['y'], r['y']+r['dy']))] = floor_char
-#     # Make sure we have perimeter walls
-#     for outside_boundary in perimeter(R):
-#          x, y = outside_boundary
-#          R[x, y] = wall_char
-
-#     for room in rooms:
-#         dungeon[room.inner] = floor_char
-
-#     for side in perimeter(dungeon):
-#         dungeon[side] = wall_char
-
