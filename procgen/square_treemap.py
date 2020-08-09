@@ -1,30 +1,42 @@
 """ testing grounds for using squarify """
-from typing import Iterator
+from typing import Iterator, Tuple
 import numpy as np
 import squarify
 import itertools
 
 
-# class Rectangle:
-#     def __init__(self, width, height, char="#"):
-#         self.width=width
-#         self.height=height
-#         self.char=char
-#         self.arr = np.full((width, height), char, order='C')
+class RectangularRoom:
+    def __init__(self, x: int, y: int, width: int, height: int):
+        self.x1 = x
+        self.y1 = y
+        self.x2 = x + width
+        self.y2 = y + width
 
-#     @property
-#     def inner(self):
-#         return slice(1, self.width-1), slice(1, self.height-1)
+    @property
+    def center(self) -> Tuple[int, int]:
+        center_x = int((self.x1 + self.x2) /2 )
+        center_y = int((self.y1 + self.y2) /2 )
 
-#     @property
-#     def aspect_ratio(self):
-#         return self.width / self.height
+        return center_x, center_y
 
-#     def __str__(self):
-#         arr = []
-#         for row in self.arr.transpose():
-#             arr.append(''.join(row))
-#         return "\n".join(arr)
+    @property
+    def inner(self) -> Tuple[slice, slice]:
+        """Return the inner area of this room as a 2D array index."""
+        return slice(self.x1 + 1, self.x2), slice(self.y1 + 1, self.y2)
+
+    def intersects(self, other: RectangularRoom) -> bool:
+        """ Returns true if rooms overlap. """
+        return (
+            self.x1 <= other.x2
+            and self.x2 >= other.x1
+            and self.y1 <= other.y2
+            and self.y2 >= other.y1
+        )
+
+    def get_random_point(self):
+        x = random.randint(self.x1 + 1, self.x2 - 1)
+        y = random.randint(self.y1 + 1, self.y2 - 1)
+        return x, y
 
 
 def print_floor(arr):
@@ -80,10 +92,9 @@ if __name__ == "__main__":
             else:
                 rectangle[k] = int(v)-1
 
-    for r in f:
-        R[(slice(r['x'], r['x']+r['dx']), slice(r['y'], r['y']+r['dy']))] = floor_char
-    # Make sure we have perimeter walls
-    for outside_boundary in perimeter(R):
-        x, y = outside_boundary
-        R[x, y] = wall_char
-    print_floor(R)
+#     for r in f:
+#         R[(slice(r['x'], r['x']+r['dx']), slice(r['y'], r['y']+r['dy']))] = floor_char
+#     # Make sure we have perimeter walls
+#     for outside_boundary in perimeter(R):
+#         x, y = outside_boundary
+#         R[x, y] = wall_char
