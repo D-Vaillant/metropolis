@@ -10,11 +10,11 @@ import components.ai
 import components.inventory
 from components.base_component import BaseComponent
 from exceptions import Impossible
+import forces
 from input_handlers import SingleRangedAttackHandler
 
 if TYPE_CHECKING:
     from entity import Actor, Item
-
 
 
 class Consumable(BaseComponent):
@@ -37,7 +37,6 @@ class Consumable(BaseComponent):
         inventory = entity.parent
         if isinstance(inventory, components.inventory.Inventory):
             inventory.items.remove(entity)
-
 
 
 class ConfusionConsumable(Consumable):
@@ -77,7 +76,6 @@ class ConfusionConsumable(Consumable):
         self.consume()
 
 
-
 class HealingConsumable(Consumable):
     def __init__(self,
                  amount: Union[int, Callable],
@@ -107,14 +105,17 @@ class HealingConsumable(Consumable):
             raise Impossible(f"Your health is already full.")
 
 
-class LightningDamageConsumable(Consumable):
+class RangedDamageConsumable(Consumable):
     def __init__(self,
                  damage: Union[int, Callable],
                  maximum_range: int):
         if not isinstance(damage, int):
             damage = damage()
         self.damage = damage
+        self.damage_type = forces.Force
         self.maximum_range = maximum_range
+        #self.message = "Energy strikes {target_name} for {damage} HP."
+        self.message = self.damage_type.message
 
     def activate(self, action: actions.ItemAction) -> None:
         consumer = action.entity
@@ -132,9 +133,20 @@ class LightningDamageConsumable(Consumable):
 
         if target:
             self.engine.message_log.add_message(
-                f"A crackle of electricity strikes {target.name} for {self.damage} HP.",
+                self.message.format(target_name=target.name, damage=self.damage)
             )
-            target.fighter.take_damage(self.damage)
+            target.fighter.take_damage(self.damage, self.damage_type)
             self.consume()
         else:
             raise Impossible("No enemy is near.")
+
+
+class LightningDamageConsumable(RangedDamagedConsumable):
+    def __init__(self,
+                 damage: Union[int, Callable],
+                 maximum_range: int):
+        super().__init__(damage, maximum_range)
+
+        self.damage_type = forces.Lightning
+        self.message = self.damage_type.message
+        # self.message = "A crackle of electricity strikes {target_name} for {damage} HP.",

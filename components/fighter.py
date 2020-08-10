@@ -1,24 +1,33 @@
 from __future__ import annotations
 
+from collections import defaultdict
 from typing import TYPE_CHECKING
 
 import color
 from components.base_component import BaseComponent
+import forces
 from input_handlers import GameOverEventHandler
 from render_order import RenderOrder
 
 if TYPE_CHECKING:
-    from entity import Actor
+    from entity import Actor, Furniture
 
 
-class Fighter(BaseComponent):
-    parent: Actor
+class Mortal(BaseComponent):
+    parent: Entity
 
-    def __init__(self, hp: int, defense: int, power: int):
+    def __init__(self,
+                 hp: int,
+                 defense: int,
+                 vulnerabilities: Optional[dict]):
         self.max_hp = hp
         self._hp = hp
         self.defense = defense
-        self.power = power
+
+        if vulnerabilities is None:
+            self.vulnerabilities = defaultdict(lambda: 1)
+        else:
+            self.vulnerabilities = defaultdict(**vulnerabilities)
 
     @property
     def hp(self) -> int:
@@ -29,6 +38,36 @@ class Fighter(BaseComponent):
         self._hp = max(0, min(value, self.max_hp))
         if self._hp == 0 and self.parent.ai:
             self.die()
+
+    def heal(self, amount: int) -> int:
+        if self.hp == self.max_hp:
+            return 0
+
+        new_hp_value = self.hp + amount
+        if new_hp_value > self.max_hp:
+            new_hp_value = self.max_hp
+
+        amount_recovered = new_hp_value - self.hp
+        self.hp = new_hp_value
+        return amount_recovered
+
+    def take_damage(self,
+                    amount: int,
+                    damage_type: forces.DamageType) -> None:
+        # Allows for variable damages depending on weaknesses.
+        amount = self.vulnerabilities[damage_type] * amount
+        self.hp -= amount
+
+    def die(self) -> None:
+        raise NotImplementedError()
+
+
+class Fighter(Mortal):
+    parent: Actor
+
+    def __init__(self, hp: int, defense: int, power: int):
+        super().__init__(hp, defense)
+        self.power = power
 
     def die(self) -> None:
         if self.engine.player is self.parent:
@@ -48,17 +87,3 @@ class Fighter(BaseComponent):
 
         self.engine.message_log.add_message(death_message, death_message_color)
 
-    def heal(self, amount: int) -> int:
-        if self.hp == self.max_hp:
-            return 0
-
-        new_hp_value = self.hp + amount
-        if new_hp_value > self.max_hp:
-            new_hp_value = self.max_hp
-
-        amount_recovered = new_hp_value - self.hp
-        self.hp = new_hp_value
-        return amount_recovered
-
-    def take_damage(self, amount: int) -> None:
-        self.hp -= amount

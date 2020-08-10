@@ -12,6 +12,7 @@ import tile_types
 if TYPE_CHECKING:
     from engine import Engine
 
+
 class RectangularRoom:
     def __init__(self, x: int, y: int, width: int, height: int):
         self.x1 = x
@@ -21,17 +22,22 @@ class RectangularRoom:
 
     @property
     def center(self) -> Tuple[int, int]:
-        center_x = int((self.x1 + self.x2) /2 )
-        center_y = int((self.y1 + self.y2) /2 )
+        center_x = int((self.x1 + self.x2) / 2)
+        center_y = int((self.y1 + self.y2) / 2)
 
         return center_x, center_y
+
+    @property
+    def outer(self) -> Tuple[slice, slice]:
+        """ Returns the whole room, walls including. """
+        return slice(self.x1, self.x2+1), slice(self.y1, self.y2+1)
 
     @property
     def inner(self) -> Tuple[slice, slice]:
         """Return the inner area of this room as a 2D array index."""
         return slice(self.x1 + 1, self.x2), slice(self.y1 + 1, self.y2)
 
-    def intersects(self, other: RectangularRoom) -> bool:
+    def intersects(self, other) -> bool:
         """ Returns true if rooms overlap. """
         return (
             self.x1 <= other.x2
@@ -40,10 +46,39 @@ class RectangularRoom:
             and self.y2 >= other.y1
         )
 
+    def adjacent(self, other) -> bool:
+        """ Returns true if the rooms have a wall in common.
+        Returns false if they're intersecting. That's illegal. """
+        return self.adjacency_wall(other) is not None
+
+    def adjacency_wall(self, other) -> Optional[Tuple[slice, slice]]:
+        """ Returns all of the shared wall tiles.
+        Doesn't play well with intersection. """
+        # Maybe
+        if self.x1 == other.x2:  # other is to the right
+            return (slice(self.x1, other.x2+1),
+                    slice(max(self.y1, other.y1)+1, min(self.y2, other.y2)))
+
+        elif self.x2 == other.x1:  # other is to the left
+            return (slice(self.x2, other.x1+1),
+                    slice(max(self.y1, other.y1)+1, min(self.y2, other.y2)))
+
+        elif self.y1 == other.y2:   # other is above
+            return (slice(max(self.x1, other.x1)+1, min(self.x2, other.x2)),
+                    slice(self.y1, other.y2+1))
+
+        elif self.y2 == other.y1:   # other is below
+            return (slice(max(self.x1, other.x1)+1, min(self.x2, other.x2)),
+                    slice(self.y2, other.y1+1))
+        return None
+
     def get_random_point(self):
         x = random.randint(self.x1 + 1, self.x2 - 1)
         y = random.randint(self.y1 + 1, self.y2 - 1)
         return x, y
+
+    def __repr__(self):
+        return f"<{self.__class__.__name__} : x=({self.x1}, {self.x2}) y=({self.y1}, {self.y2})>"
 
 
 def place_entities(

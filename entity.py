@@ -145,3 +145,31 @@ class Item(Entity):
 
         self.consumable = consumable
         self.consumable.parent = self
+
+
+class Furniture(Entity):
+    def __init__(
+        self,
+        *,
+        x: int = 0,
+        y: int = 0,
+        char: str = '%',
+        color: Tuple[int, int, int] = (255, 255, 255),
+        name: str = "<Unnamed>",
+        breakable: Breakable,
+        category: FurnitureCategory
+    ):
+        super().__init__(
+            x=x, y=y,
+            char=char, color=color,
+            name=name,
+            blocks_movement=False,
+            render_order=RenderOrder.FURNITURE,
+        )
+
+        self.breakable = breakable
+        self.breakable.parent = self
+
+        self.category = category
+        self.category.parent = self
+
