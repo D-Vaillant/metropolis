@@ -27,14 +27,19 @@ class Engine:
         self.mouse_location = (0, 0)
         self.player = player
         self.turn_queue = TurnQueue()
+        # For the sake of laziness
+        self.schedule = self.turn_queue.schedule
 
     def handle_enemy_turns(self) -> None:
         while True:
+            print(self.turn_queue)
             ticket = self.turn_queue.next()
 
             entity_to_act = ticket.value
             if entity_to_act is self.player:
                 return
+            else:
+                break
 
         # I took out the Impossible exception part...
         if entity_to_act.ai:

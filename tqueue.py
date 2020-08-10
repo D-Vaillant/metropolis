@@ -33,7 +33,7 @@ class TurnQueue(Iterable[Ticket]):
 
     def next(self) -> Ticket:
         """Pop and return the next scheduled ticket."""
-        ticket = heapq.heappop(self.pop)
+        ticket = heapq.heappop(self.heap)
         self.time = ticket.time
         return ticket
 
