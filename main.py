@@ -9,6 +9,7 @@ import color
 from engine import Engine
 import entity_factories
 from procgen import generate_dungeon
+from apartment import generate_apartment_floor
 
 if TYPE_CHECKING:
     from game_map import GameMap
@@ -24,6 +25,8 @@ def main() -> None:
     room_max_size = 10
     room_min_size = 6
     max_rooms = 30
+
+    hallway_width = 10
 
     max_monsters_per_room = 2
     max_items_per_room = 2
@@ -47,7 +50,19 @@ def main() -> None:
         max_items_per_room=max_items_per_room,
         engine=engine,
     )
-    engine.game_map: GameMap = starting_map
+
+    starting_apartment = generate_apartment_floor(
+        max_apartments=5,
+        room_min_size=5,
+        room_max_size=5,
+        map_width=map_width,
+        map_height=map_height,
+        hallway_width=hallway_width,
+        engine=engine,
+    )
+
+
+    engine.game_map: GameMap = starting_apartment
 
     engine.update_fov()
 

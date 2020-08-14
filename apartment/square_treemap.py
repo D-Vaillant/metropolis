@@ -6,7 +6,6 @@ import numpy as np
 import squarify
 import itertools
 
-
 from procgen import RectangularRoom
 
 def add_connection(

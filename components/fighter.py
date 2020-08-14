@@ -19,7 +19,7 @@ class Mortal(BaseComponent):
     def __init__(self,
                  hp: int,
                  defense: int,
-                 vulnerabilities: Optional[dict]):
+                 vulnerabilities: Optional[dict] = None):
         self.max_hp = hp
         self._hp = hp
         self.defense = defense

@@ -141,7 +141,7 @@ class RangedDamageConsumable(Consumable):
             raise Impossible("No enemy is near.")
 
 
-class LightningDamageConsumable(RangedDamagedConsumable):
+class LightningDamageConsumable(RangedDamageConsumable):
     def __init__(self,
                  damage: Union[int, Callable],
                  maximum_range: int):
