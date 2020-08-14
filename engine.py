@@ -32,18 +32,15 @@ class Engine:
 
     def handle_enemy_turns(self) -> None:
         while True:
-            print(self.turn_queue)
+            # print(self.turn_queue)
             ticket = self.turn_queue.next()
 
             entity_to_act = ticket.value
             if entity_to_act is self.player:
                 return
-            else:
-                break
-
-        # I took out the Impossible exception part...
-        if entity_to_act.ai:
-            entity_to_act.ai.perform()
+            elif entity_to_act.ai:
+                # I took out the Impossible exception part...
+                entity_to_act.ai.perform()
 
 
     def update_fov(self) -> None:

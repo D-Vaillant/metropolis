@@ -44,7 +44,7 @@ class Entity:
         and entity attributes to get our speed. Allows for difficult terrain,
         components which allow avoidance of difficult terrain. """
         self.base_ticks = 30
-        self.movement_ticks = 30
+        self.movement_ticks = movement_ticks
         self.attack_ticks = 30
         if parent:
             # If we don't have one, set it later.
