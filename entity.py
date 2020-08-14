@@ -29,6 +29,7 @@ class Entity:
             char: str = "?",
             color: Tuple[int, int, int] = (255,255,255),
             name: str = "<Unnamed>",
+            movement_ticks: int = 30,  # Definitely change this once I have a Speed stat.
             blocks_movement: bool = False,
             render_order: RenderOrder = RenderOrder.FLOOR,
     ):
@@ -39,10 +40,19 @@ class Entity:
         self.name = name
         self.blocks_movement = blocks_movement
         self.render_order = render_order
+        """ Replace this with a @property which takes the current tile
+        and entity attributes to get our speed. Allows for difficult terrain,
+        components which allow avoidance of difficult terrain. """
+        self.base_ticks = 30
+        self.movement_ticks = movement_ticks
+        self.attack_ticks = 30
         if parent:
             # If we don't have one, set it later.
             self.parent = parent
             parent.entities.add(self)
+
+    def __repr__(self):
+        return f"Entity(name={self.name})"
 
     @property
     def gamemap(self) -> GameMap:
@@ -58,6 +68,10 @@ class Entity:
         clone.y = y
         clone.parent = gamemap
         gamemap.entities.add(clone)
+
+        if isinstance(self, Actor):
+            gamemap.engine.schedule(value=clone, interval=10)
+
         return clone
 
     def place(self, x: int, y: int, gamemap: Optional[GameMap] = None) -> None:

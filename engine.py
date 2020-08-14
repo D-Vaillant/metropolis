@@ -10,6 +10,7 @@ import exceptions
 from input_handlers import MainGameEventHandler
 from message_log import MessageLog
 from render_functions import render_bar, render_names_at_mouse_location
+from tqueue import TurnQueue
 
 if TYPE_CHECKING:
     from entity import Actor
@@ -27,13 +28,22 @@ class Engine:
         self.player = player
         self.map_index = 0
         self.game_maps = []
+        self.turn_queue = TurnQueue()
+        # For the sake of laziness
+        self.schedule = self.turn_queue.schedule
 
     def handle_enemy_turns(self) -> None:
-        for entity in set(self.game_map.actors) - {self.player}:
-            try:
-                entity.ai.perform()
-            except exceptions.Impossible:
-                pass  # ignore impossible AI actions
+        while True:
+            # print(self.turn_queue)
+            ticket = self.turn_queue.next()
+
+            entity_to_act = ticket.value
+            if entity_to_act is self.player:
+                return
+            elif entity_to_act.ai:
+                # I took out the Impossible exception part...
+                entity_to_act.ai.perform()
+
 
     @property
     def game_map(self) -> Optional[GameMap]:
