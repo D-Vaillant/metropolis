@@ -3,3 +3,9 @@ class Impossible(Exception):
 
     Reason given as the exception message.
     """
+    pass
+
+
+class InstantiationError(Exception):
+    """ Exception raised when a class is instantiated poorly. """
+    pass

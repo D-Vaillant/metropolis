@@ -9,6 +9,7 @@ import color
 from engine import Engine
 import entity_factories
 from procgen import generate_dungeon
+from viewport import Viewport
 
 if TYPE_CHECKING:
     from game_map import GameMap
@@ -37,6 +38,8 @@ def main() -> None:
 
     engine = Engine(player=player)
 
+    viewport = Viewport(width=screen_width, height=screen_height, engine=engine)
+
     starting_map = generate_dungeon(
         max_rooms=max_rooms,
         room_min_size=room_min_size,
@@ -63,7 +66,7 @@ def main() -> None:
             vsync=True,
     ) as context:
         root_console = tcod.Console(screen_width, screen_height, order="F")
-        while True:
+        while True:   # Why are we looping this?
             root_console.clear()
             engine.event_handler.on_render(console=root_console)
             context.present(root_console)

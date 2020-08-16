@@ -16,12 +16,13 @@ if TYPE_CHECKING:
     from entity import Actor
     from game_map import GameMap
     from input_handlers import EventHandler
+    from viewport import Viewport
 
 class Engine:
     game_maps: List[GameMap]
 
     def __init__(self,
-                 player: Actor):
+                 player: Actor,):
         self.event_handler: EventHandler = MainGameEventHandler(self)
         self.message_log = MessageLog()
         self.mouse_location = (0, 0)
