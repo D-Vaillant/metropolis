@@ -20,12 +20,7 @@ class Action:
         """ Return the engine that this action belongs to. """
         return self.entity.gamemap.engine   # Entities (and so Agents) are attached to Engine
 
-    def schedule(self, interval: int, value: Any) -> Ticket:
-        """ Harmless wrapper function. """
-        return self.engine.turn_queue.schedule(interval=interval, value=value)
-
-
-    def perform(self) -> None:
+    def perform(self) -> int:
         """ Perform this action with the objects required.
 
         `self.engine` is the scope that the actions are performed in
@@ -37,11 +32,9 @@ class Action:
         raise NotImplementedError()
 
 
-
 class WaitAction(Action):
-    def perform(self) -> None:
-        self.engine.schedule(value=self.entity, interval=self.entity.base_ticks)
-        pass
+    def perform(self) -> int:
+        return self.entity.base_ticks
 
 
 class ActionWithDirection(Action):
@@ -75,15 +68,14 @@ class ActionWithDirection(Action):
 
 
 class MeleeAction(ActionWithDirection):
-    def perform(self) -> None:
+    def perform(self) -> int:
         target = self.target_actor
         if not target:
-            self.engine.schedule(value=self.entity, interval=0)
-            raise exceptions.Impossible("Nothing to attack.")
+            self.engine.message_log.add_message("Nothing to attack.", color.impossible)
+            return 0
 
         damage = self.entity.fighter.power - target.fighter.defense
 
-        self.engine.schedule(value=self.entity, interval=self.entity.attack_ticks)
         attack_desc = f"{self.entity.name.capitalize()} attacks {target.name}"
         if self.entity is self.engine.player:
             attack_color = color.player_atk
@@ -99,29 +91,31 @@ class MeleeAction(ActionWithDirection):
                 f"{attack_desc}, but the blow is deflected harmlessly.", attack_color
             )
 
+        return self.entity.attack_ticks
+
 
 class MovementAction(ActionWithDirection):
-    def perform(self) -> None:
+    def perform(self) -> int:
         dest_x, dest_y = self.dest_xy
 
         default_interval = 0 if self.entity == self.engine.player else 2
-        # TODO I hate exceptions.Impossible.
         if not self.engine.game_map.in_bounds(dest_x, dest_y):
             # destination out of bounds
-            self.engine.schedule(value=self.entity, interval=default_interval)
-            raise exceptions.Impossible("That way is blocked.")
-        if not self.engine.game_map.tiles["walkable"][dest_x, dest_y]:
+            error_msg = "That way is blocked."
+        elif not self.engine.game_map.tiles["walkable"][dest_x, dest_y]:
             # can't move through walls
-            self.engine.schedule(value=self.entity, interval=default_interval)
-            raise exceptions.Impossible("That way is blocked.")
-        if self.engine.game_map.get_blocking_entity_at_location(dest_x, dest_y):
+            error_msg = "That way is blocked."
+        elif self.engine.game_map.get_blocking_entity_at_location(dest_x, dest_y):
             # destination blocked by entity
-            self.engine.schedule(value=self.entity, interval=default_interval)
-            raise exceptions.Impossible("That way is blocked.")
+            error_msg = "That way is blocked."
 
-        self.engine.schedule(value=self.entity, 
-                             interval=self.entity.movement_ticks)
-        self.entity.move(self.dx, self.dy)
+        else:  # All trials passed, proceed.
+            self.entity.move(self.dx, self.dy)
+            return self.entity.movement_ticks
+
+        # We are abandoned.
+        self.engine.message_log.add_message(error_msg, color.impossible)
+        return default_interval
 
 
 class BumpAction(ActionWithDirection):
@@ -136,7 +130,7 @@ class PickupAction(Action):
     def __init__(self, entity: Actor):
         super().__init__(entity)
 
-    def perform(self) -> None:
+    def perform(self) -> int:
         actor_location_x = self.entity.x
         actor_location_y = self.entity.y
         inventory = self.entity.inventory
@@ -145,19 +139,18 @@ class PickupAction(Action):
             if item.overlaps(actor_location_x, actor_location_y):
                 if len(inventory.items) >= inventory.capacity:
                     self.engine.schedule(value=self.entity, interval=0)
-                    raise exceptions.Impossible("Your inventory is full.")
+                    self.engine.message_log.add_message("Your inventory is full.", color.impossible)
+                    return 0
 
                 self.engine.game_map.entities.remove(item)
                 item.parent = self.entity.inventory
                 inventory.items.append(item)
 
-                self.engine.schedule(value=self.entity, interval=15)
                 self.engine.message_log.add_message(f"You picked up the {item.name}.")
-                return
+                return 15
 
-        self.engine.turn_queue.schedule(value=self.entity, interval=0)
         self.engine.message_log.add_message("There is nothing here to pick up.")
-        return
+        return 0
 
 
 
@@ -173,21 +166,23 @@ class ItemAction(Action):
         if not target_xy:
             target_xy = entity.x, entity.y
         self.target_xy = target_xy
-        self.use_time = 30
 
     @property
     def target_actor(self) -> Optional[Actor]:
         """ Return the actor at this action's destination. """
         return self.engine.game_map.get_actor_at_location(*self.target_xy)
 
-    def perform(self) -> None:
+    def perform(self) -> int:
         """Invoke the item's ability."""
-        self.engine.schedule(value=self.entity, interval=self.use_time)
         self.item.consumable.activate(self)
+        try:
+            return self.entity.use_time
+        except AttributeError:  # This is probably not needed, right?
+            return 30
 
 
 
 class DropItem(ItemAction):
-    def perform(self) -> None:
-        self.engine.schedule(value=self.entity, interval=15)
+    def perform(self) -> int:
         self.entity.inventory.drop(self.item)
+        return 15

@@ -43,7 +43,12 @@ class Engine:
                 return
             elif entity_to_act.ai:
                 # I took out the Impossible exception part...
-                entity_to_act.ai.perform()
+                tick_cost = entity_to_act.ai.perform()
+                if tick_cost is None:
+                    raise exceptions.Impossible("An action occurred without a tick cost.")
+                self.schedule(value=entity_to_act, interval=tick_cost)
+
+
 
 
     @property

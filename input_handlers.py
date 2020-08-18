@@ -102,6 +102,9 @@ class EventHandler(tcod.event.EventDispatch[Action]):
     def ev_quit(self, event: tcod.event.Quit) -> Optional[Action]:
         raise SystemExit()
 
+    def ev_windowsizechanged(self, event: tcod.event.WindowResized) -> None:
+        pass
+
     def on_render(self, console: tcod.Console) -> None:
         self.engine.render(console)
 

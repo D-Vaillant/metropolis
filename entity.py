@@ -147,6 +147,7 @@ class Item(Entity):
         char: str = "?",
         color: Tuple[int, int, int] = (255, 255, 255),
         name: str = "<Unnamed>",
+        use_time: int = 30,
         consumable: Consumable,
     ):
         super().__init__(
@@ -157,5 +158,6 @@ class Item(Entity):
             render_order=RenderOrder.ITEM,
         )
 
+        self.use_time = use_time
         self.consumable = consumable
         self.consumable.parent = self
