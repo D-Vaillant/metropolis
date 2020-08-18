@@ -126,6 +126,8 @@ class MainGameEventHandler(EventHandler):
             self.engine.event_handler = HistoryViewer(self.engine)
 
         elif key == tcod.event.K_g:
+            # elif key == tcod.event.K_g
+            # elif map[key] == "PICKUP"
             action = PickupAction(player)
         elif key == tcod.event.K_o:
             self.engine.event_handler = InventoryActivateHandler(self.engine)
