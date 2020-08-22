@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import copy
+import logging
 import traceback
 from typing import TYPE_CHECKING
 
@@ -16,6 +17,19 @@ if TYPE_CHECKING:
 
 
 def main() -> None:
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.INFO)
+    # create console handler and set level to debug
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.DEBUG)
+    # create formatter
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    # add formatter to ch
+    ch.setFormatter(formatter)
+    # add ch to logger
+    logger.addHandler(ch)
+
+    # okay, logger should be ok now
     screen_width = 80
     screen_height = 50
 
@@ -38,8 +52,6 @@ def main() -> None:
 
     engine = Engine(player=player)
 
-    viewport = Viewport(width=screen_width, height=screen_height, engine=engine)
-
     starting_map = generate_dungeon(
         max_rooms=max_rooms,
         room_min_size=room_min_size,
@@ -52,12 +64,7 @@ def main() -> None:
     )
     engine.game_map: GameMap = starting_map
 
-    engine.update_fov()
-
-    engine.message_log.add_message(
-        "You wake up in a cold room. The floor is stone.", color.welcome_text
-    )
-
+    logger.info("Entering context.")
     with tcod.context.new_terminal(
             screen_width,
             screen_height,
@@ -65,16 +72,28 @@ def main() -> None:
             title="Roguelike Tutorial",
             vsync=True,
     ) as context:
-        root_console = tcod.Console(screen_width, screen_height, order="F")
+        viewport = Viewport(screen_width, screen_height, order="F", engine=engine)
+        viewport.update_fov()
+
+        engine.message_log.add_message(
+            "You wake up in a cold room. The floor is stone.", color.welcome_text
+        )
+
+        logger.info("Starting loop.")
         while True:   # Why are we looping this?
-            root_console.clear()
-            engine.event_handler.on_render(console=root_console)
-            context.present(root_console)
+            viewport.clear()
+            logger.info("Cleared")
+            engine.event_handler.on_render(viewport=viewport)
+            logger.info("Rendering viewport")
+            context.present(viewport.console)
+            logger.info("Presenting onto the viewport context (?)")
 
             try:
                 for event in tcod.event.wait():
+                    logger.info("event: {}".format(event))
                     context.convert_event(event)
                     engine.event_handler.handle_events(event)
+                    viewport.update_fov()
             except Exception:
                 traceback.print_exc()
                 # print error to the message log
