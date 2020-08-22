@@ -16,6 +16,7 @@ import exceptions
 
 if TYPE_CHECKING:
     from engine import Engine
+    from viewport import Viewport
     from entity import Item
 
 MOVE_KEYS = {
@@ -92,7 +93,6 @@ class EventHandler(tcod.event.EventDispatch[Action]):
 
         self.engine.handle_enemy_turns()
 
-        self.engine.update_fov()
         return True
 
     def ev_mousemotion(self, event: tcod.event.MouseMotion) -> None:
@@ -105,8 +105,8 @@ class EventHandler(tcod.event.EventDispatch[Action]):
     def ev_windowsizechanged(self, event: tcod.event.WindowResized) -> None:
         pass
 
-    def on_render(self, console: tcod.Console) -> None:
-        self.engine.render(console)
+    def on_render(self, viewport: Viewport) -> None:
+        viewport.render()
 
 
 
@@ -164,10 +164,10 @@ class HistoryViewer(EventHandler):
         self.log_length = len(engine.message_log.messages)
         self.cursor = self.log_length - 1
 
-    def on_render(self, console: tcod.Console) -> None:
-        super().on_render(console)  # Draw the main state as the background.
+    def on_render(self, viewport: Viewport) -> None:
+        super().on_render(viewport)  # Draw the main state as the background.
 
-        log_console = tcod.Console(console.width - 6, console.height - 6)
+        log_console = tcod.Console(viewport.width - 6, viewport.height - 6)
 
         # Draw a frame with a custom banner title.
         log_console.draw_frame(0, 0, log_console.width, log_console.height)
@@ -184,7 +184,7 @@ class HistoryViewer(EventHandler):
             log_console.height - 2,
             self.engine.message_log.messages[: self.cursor + 1],
         )
-        log_console.blit(console, 3, 3)
+        log_console.blit(viewport.console, 3, 3)
 
     def ev_keydown(self, event: tcod.event.KeyDown) -> None:
         # Fancy conditional movement to make it feel right.
@@ -246,13 +246,13 @@ class InventoryEventHandler(AskUserEventHandler):
 
     TITLE = "<missing title>"
 
-    def on_render(self, console: tcod.Console) -> None:
+    def on_render(self, viewport: Viewport) -> None:
         """Render an inventory menu, which displays the items in the
         inventory, and the letter to select them
         Will move to a different position based on where the player is
         location so the player can always see where it is.
         """
-        super().on_render(console)
+        super().on_render(viewport)
         number_of_items_in_inventory = len(self.engine.player.inventory.items)
 
         height = number_of_items_in_inventory + 2
@@ -270,7 +270,7 @@ class InventoryEventHandler(AskUserEventHandler):
 
         width = len(self.TITLE) + 4
 
-        console.draw_frame(
+        viewport.console.draw_frame(
             x=x,
             y=y,
             width=width,
@@ -285,9 +285,9 @@ class InventoryEventHandler(AskUserEventHandler):
             for i, item in enumerate(self.engine.player.inventory.items):
                 # assign each item a key
                 item_key = chr(ord("a") + i)
-                console.print(x + 1, y + i + 1, f"({item_key}) {item.name}")
+                viewport.console.print(x + 1, y + i + 1, f"({item_key}) {item.name}")
         else:
-            console.print(x + 1, y + 1, "(Empty)")
+            viewport.console.print(x + 1, y + 1, "(Empty)")
 
     def ev_keydown(self, event: tcod.event.KeyDown) -> Optional[Action]:
         player = self.engine.player
@@ -339,12 +339,12 @@ class SelectIndexHandler(AskUserEventHandler):
         player = self.engine.player
         engine.mouse_location = player.x, player.y
 
-    def on_render(self, console: tcod.Console) -> None:
+    def on_render(self, viewport: Viewport) -> None:
         """ Highlight the tile under the cursor. """
-        super().on_render(console)
+        super().on_render(viewport)
         x, y = self.engine.mouse_location
-        console.tiles_rgb["bg"][x, y] = color.white
-        console.tiles_rgb["fg"][x, y] = color.black
+        viewport.console.tiles_rgb["bg"][x, y] = color.white
+        viewport.console.tiles_rgb["fg"][x, y] = color.black
 
     def ev_keydown(self, event: tcod.event.KeyDown) -> Optional[Action]:
         """ Check for key movement or confirmation keys. """
@@ -421,14 +421,14 @@ class AreaRangedAttackHandler(SelectIndexHandler):
         self.radius = radius
         self.callback = callback
 
-    def on_render(self, console: tcod.Console) -> None:
+    def on_render(self, viewport: Viewport) -> None:
         """ Highlight tile under the cursor. """
-        super().on_render(console)   # Draw the lil highlighted tile.
+        super().on_render(viewport)   # Draw the lil highlighted tile.
 
-        x, y = self.engine.mouse_locatoin
+        x, y = self.engine.mouse_location
 
         # Draw rectangle.
-        console.draw_frame(
+        viewport.console.draw_frame(
             x=x - self.radius - 1,
             y=y - self.radius - 1,
             width=self.radius ** 2,
