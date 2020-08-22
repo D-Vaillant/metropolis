@@ -11,14 +11,7 @@ player = Actor(
     color=(255,255,255),
     name="Player",
     ai_cls=HostileEnemy,
-    fighter=Fighter(body=15,
-                    agility=5,
-                    reflexes=5,
-                    strength=7,
-                    charisma=5,
-                    intuition=5,
-                    logic=5,
-                    willpower = 5),
+    fighter=Fighter(hp=30, defense=2, power=5),
     inventory=Inventory(capacity=26),
 )
 
@@ -27,14 +20,7 @@ orc = Actor(
     color=(63, 127, 63),
     name="Orc",
     ai_cls=HostileEnemy,
-    fighter=Fighter(body=10,
-                    agility=5,
-                    reflexes=5,
-                    strength=3,
-                    charisma=5,
-                    intuition=5,
-                    logic=5,
-                    willpower = 5),
+    fighter=Fighter(hp=10, defense=0, power=3),
     inventory=Inventory(capacity=0),
 )
 
@@ -43,14 +29,7 @@ troll = Actor(
     color=(0,127,0),
     name="Troll",
     ai_cls=HostileEnemy,
-    fighter=Fighter(body=15,
-                    agility=5,
-                    reflexes=5,
-                    strength=10,
-                    charisma=5,
-                    intuition=5,
-                    logic=5,
-                    willpower = 5),
+    fighter=Fighter(hp=16, defense=1, power=4),
     inventory=Inventory(capacity=0),
 )
 
