@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+import sys
 from typing import List, Optional, TYPE_CHECKING
 
 from tcod.console import Console
@@ -16,6 +18,9 @@ if TYPE_CHECKING:
     from entity import Actor
     from game_map import GameMap
     from input_handlers import EventHandler
+
+
+logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 class Engine:
     game_maps: List[GameMap]
@@ -39,10 +44,12 @@ class Engine:
 
             entity_to_act = ticket.value
             if entity_to_act is self.player:
+                logging.info("Player action.")
                 return
             elif entity_to_act.ai:
                 # I took out the Impossible exception part...
                 tick_cost = entity_to_act.ai.perform()
+                logging.info("{} acted, with tick_cost {}.".format(entity_to_act, tick_cost))
                 if tick_cost is None:
                     raise exceptions.Impossible("An action occurred without a tick cost.")
                 self.schedule(value=entity_to_act, interval=tick_cost)

@@ -82,11 +82,8 @@ def main() -> None:
         logger.info("Starting loop.")
         while True:   # Why are we looping this?
             viewport.clear()
-            logger.info("Cleared")
             engine.event_handler.on_render(viewport=viewport)
-            logger.info("Rendering viewport")
             context.present(viewport.console)
-            logger.info("Presenting onto the viewport context (?)")
 
             try:
                 for event in tcod.event.wait():

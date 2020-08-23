@@ -81,16 +81,18 @@ class EventHandler(tcod.event.EventDispatch[Action]):
         """ Handle actions required from event methods.
 
         Returns True if the action will advance a turn.
+        A lot of this seems unnecessary, but c'est la vie.
         """
         if action is None:
             return False
 
         try:
-            action.perform()
+            tick_cost = action.perform()
         except exceptions.Impossible as exc:
             self.engine.message_log.add_message(exc.args[0], color.impossible)
             return False  # skip enemy turns if impossible
 
+        self.engine.schedule(value=self.engine.player, interval=tick_cost)
         self.engine.handle_enemy_turns()
 
         return True
