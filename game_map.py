@@ -46,6 +46,16 @@ class GameMap:
             if isinstance(entity, Item)
         )
 
+    def get_names_at_location(self, x: int, y: int) -> str:
+        """ returns names of entities at a location
+        might want to have this just return the Entity, huh. """
+        if not game_map.in_bounds(x, y) or not game_map.visible[x, y]:
+            return ""
+
+        names = ", ".join(
+            entity.name for entity in game_map.entities if (entity.x, entity.y) == (x, y))
+        return names.capitalize()
+
     def get_blocking_entity_at_location(
         self, location_x: int, location_y: int,
     ) -> Optional[Entity]:

@@ -11,7 +11,8 @@ if TYPE_CHECKING:
 
 
 def get_names_at_location(x: int, y: int, game_map: GameMap) -> str:
-    """ returns the names of any entities at a location
+    # lol just fucking make this..... part of GameMap
+    """m    k returns the names of any entities at a location
     edit me to return any information you want """
     if not game_map.in_bounds(x, y) or not game_map.visible[x, y]:
         return ""

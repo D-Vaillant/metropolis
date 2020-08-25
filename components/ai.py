@@ -20,6 +20,10 @@ if TYPE_CHECKING:
 
 
 class BaseAI(Action):
+    def __init__(self, entity: Actor):
+        super().__init__(entity)
+        #map = entity.parent
+        #self.known_map = np.full((map.width, map.height), fill_value=False, order="F")
 
     def perform(self) -> None:
         raise NotImplementedError()
@@ -51,6 +55,12 @@ class BaseAI(Action):
         # Convert from List[List[int]] to List[Tuple[int, int]]
         return [(index[0], index[1]) for index in path]
 
+#     def update_fov(self) -> None:
+#         """ Updates a radius around the entity. """
+#         compute_fov(transparency=self.engine.game_map.tiles["transparent"],
+#                     pov=(self.entity.x, self.entity.y),
+#                     radius=8,)
+
 
 class ConfusedEnemy(BaseAI):
     """
@@ -59,6 +69,8 @@ class ConfusedEnemy(BaseAI):
 
     Has a chance to avoid hitting allies.
     """
+    expiration_message = "The {name} is no longer confused."
+    
     def __init__(self,
          entity: Actor,
          previous_ai: Optional[BaseAI],
@@ -73,7 +85,7 @@ class ConfusedEnemy(BaseAI):
         # Revert AI back to original state once effect expires.
         if self.turns_remaining <= 0:
             self.engine.message_log.add_message(
-                f"The {self.entity.name} is no longer confused."
+                self.expiration_message.format(name=entity.name)
             )
             self.entity.ai = self.previous_ai
         else:
@@ -102,6 +114,7 @@ class ConfusedEnemy(BaseAI):
                 if r <= 0.5:
                     return WaitAction(self.entity)
             return BumpAction(self.entity, direction_x, direction_y,).perform()
+
 
 class HostileEnemy(BaseAI):
     def __init__(self, entity: Actor):
